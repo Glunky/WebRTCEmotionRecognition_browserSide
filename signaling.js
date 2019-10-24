@@ -14,75 +14,50 @@ io.on('connection', function (socket){
         clients[socket.id] = socket
     }
 
+    socket.on('message', function (message) {
+        console.log('Got message: ', message);
+        // For a real app, should be room only (not broadcast)
+        socket.broadcast.emit('message', message);
+    });
+
     socket.on('joinRoom', function (room) {
         if(!groups.hasOwnProperty(room)){
             groups[room] = new Map();
-            console.log("Group " + room + " has been created")
+            console.log("Group " + room + " has been created");
         }
 
         numClients = groups[room].size;
 
-        if (numClients < 5) {
+        if (numClients == 0) {
             sid = socket.id;
-            groups[room].set(sid, socket)
-            console.log("Client " + socket.id + " has been added into " + room + " group")
-            console.log(groups[room].size + " client in " + room + " group now")
+            groups[room].set(sid, socket);
+            clients[sid].cliType = "offer"
+            socket.emit('created')
         }
+
+        else if (numClients == 1) {
+            sid = socket.id;
+            groups[room].set(sid, socket);
+            clients[sid].cliType = "answer"
+            socket.emit('joined')
+        }
+
         else { // max two clients
-             console.log(room + "group is full")
+            console.log(room + "group is full")
         }
     });
 
     socket.on('onMessage', function (message) {
         console.log('Got message:', message);
         // for a real app, would be room only (not broadcast)
-        io.emit('onMessage', message);
+        socket.broadcast.emit('onMessage', message);
     });
 
     socket.on('disconnect', function(){
         console.log("user " + socket.id + " has been disconnected");
         groups["Apex"].delete(socket.id)
         delete clients[socket.id]
-        console.log(clients)
-        console.log(groups)
     });
-
-    /*
-  // convenience function to log server messages on the client
-    function log(){
-        var array = [">>> Message from server: "];
-      for (var i = 0; i < arguments.length; i++) {
-          array.push(arguments[i]);
-      }
-        socket.emit('log', array);
-    }
-
-    socket.on('message', function (message) {
-        log('Got message:', message);
-    // for a real app, would be room only (not broadcast)
-        socket.broadcast.emit('message', message);
-    });
-
-    socket.on('create or join', function (room) {
-        var numClients = io.sockets.clients(room).length;
-
-        log('Room ' + room + ' has ' + numClients + ' client(s)');
-        log('Request to create or join room ' + room);
-
-        if (numClients === 0){
-            socket.join(room);
-            socket.emit('created', room);
-        } else if (numClients === 1) {
-            io.sockets.in(room).emit('join', room);
-            socket.join(room);
-            socket.emit('joined', room);
-        } else { // max two clients
-            socket.emit('full', room);
-        }
-        socket.emit('emit(): client ' + socket.id + ' joined room ' + room);
-        socket.broadcast.emit('broadcast(): client ' + socket.id + ' joined room ' + room);
-    });
-*/
 });
 
 http.listen(3000, function(){
