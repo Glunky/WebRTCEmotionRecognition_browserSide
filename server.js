@@ -1,11 +1,15 @@
-var static = require('node-static');
-var http = require('http');
-var file = new(static.Server)();
-var app = http.createServer(function (req, res) {
-    file.serve(req, res);
-}).listen(1234);
+var app = require('express')();
+var express = require('express');
+var http = require('http').createServer(app);
+var io = require('socket.io')(http);
 
-var io = require('socket.io').listen(app);
+
+app.use("/static", express.static('./static/'));
+app.use("/models", express.static('./models/'));
+
+app.get('/', function(req, res){
+  res.sendFile(__dirname + '\\index.html');
+});
 
 io.sockets.on('connection', function (socket) {
     function log() {
@@ -45,4 +49,8 @@ io.sockets.on('connection', function (socket) {
         socket.emit('emit(): client ' + socket.id + ' joined room ' + room);
         socket.broadcast.emit('broadcast(): client ' + socket.id + ' joined room ' + room);
     });
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
 });
