@@ -1,9 +1,11 @@
 //const video = document.getElementById('video')
 
+var clientType = "";
+
 var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
 var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
+navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia || navigator.mediaDevices.mozGetUserMedia || navigator.mediaDevices.webkitGetUserMedia;
 var pc; // PeerConnection
 // Step 1. getUserMedia
 navigator.getUserMedia(
@@ -11,6 +13,7 @@ navigator.getUserMedia(
     gotStream,
     function(error) { console.log(error) }
 );
+
 function gotStream(stream) {
     document.getElementById("callButton").style.display = 'inline-block';
     document.getElementById("localVideo").srcObject = stream;
@@ -56,26 +59,35 @@ let video = document.getElementById("remoteVideo");
 function gotRemoteStream(event){
     document.getElementById("remoteVideo").srcObject = event.stream;
     
-    Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-      faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-      faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-      faceapi.nets.faceExpressionNet.loadFromUri('/models')
-    ]).then(console.log("loaded"));
     
-    video.addEventListener('play', () => {
-      const canvas = faceapi.createCanvasFromMedia(video)
-      document.body.append(canvas)
-      const displaySize = { width: video.getBoundingClientRect().width, height: video.getBoundingClientRect().height }
-      faceapi.matchDimensions(canvas, displaySize)
-      setInterval(async function() {
-        const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-        const resizedDetections = faceapi.resizeResults(detections, displaySize)
-        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
-        faceapi.draw.drawDetections(canvas, resizedDetections)
-        faceapi.draw.drawFaceExpressions(canvas, resizedDetections)
-      }, 100)
-    });
+    if(clientType === "offer"){
+        Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+            faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+            faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+            faceapi.nets.faceExpressionNet.loadFromUri('/models')
+        ]).then(console.log("loaded"));
+          
+          video.addEventListener('play', () => {
+            const canvas = document.getElementById("canvas");
+            //const canvas = faceapi.createCanvasFromMedia(video)
+            //document.body.append(canvas)
+            const displaySize = { width: video.getBoundingClientRect().width, height: video.getBoundingClientRect().height }
+            faceapi.matchDimensions(canvas, displaySize)
+            setInterval(async function() {
+                try{
+                  const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+                  const resizedDetections = faceapi.resizeResults(detections, displaySize)
+                  canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
+                  faceapi.draw.drawDetections(canvas, resizedDetections)
+                  faceapi.draw.drawFaceExpressions(canvas, resizedDetections)
+                }
+                catch{
+
+                }
+            }, 100)
+          });
+    }
   }
 ////////////////////////////////////////////////
 // Socket.io
@@ -85,12 +97,16 @@ function sendMessage(message){
 }
 socket.on('message', function (message){
     if (message.type === 'offer') {
+        clientType = "answer";
         pc.setRemoteDescription(new SessionDescription(message));
         createAnswer();
     }
+    
     else if (message.type === 'answer') {
+        clientType = "offer";
         pc.setRemoteDescription(new SessionDescription(message));
     }
+
     else if (message.type === 'candidate') {
         var candidate = new IceCandidate({sdpMLineIndex: message.label, candidate: message.candidate});
         pc.addIceCandidate(candidate);
