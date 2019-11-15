@@ -1,37 +1,11 @@
-
-/*
-var express = require('express')
-var fs = require('fs')
-var https = require('https')
-var app = express()
-var path = require('path');
-
-app.get('/', function (req, res) {
-    res.send('hello world')
-})
-
-https.createServer({
-    key: fs.readFileSync(__dirname + '/server.key'),
-    cert: fs.readFileSync(__dirname + '/server.cert')
-}, app)
-    .listen(3000, function () {
-        console.log('Example app listening on port 3000! Go to https://localhost:3000/')
-    })
-
-
- */
-var express = require('express');
-var fs = require('fs');
-var app = express();
-var https = require('https').createServer({
-    key: fs.readFileSync(__dirname + '/server.key'),
-    cert: fs.readFileSync(__dirname + '/server.cert')
+const express = require('express');
+const fs = require('fs');
+const app = express();
+const https = require('https').createServer({
+    key: fs.readFileSync(__dirname + '/ssl/server.key'),
+    cert: fs.readFileSync(__dirname + '/ssl/server.cert')
 }, app);
-
-
-//var http = require('http').createServer(app);
-var io = require('socket.io')(https);
-
+const io = require('socket.io')(https);
 
 app.use("/static", express.static('./static/'));
 app.use("/models", express.static('./models/'));
@@ -51,7 +25,7 @@ io.sockets.on('connection', function (socket) {
 
     socket.on('message', function (message) {
         log('Got message: ', message);
-        socket.broadcast.emit('message', message); // should be room only
+        socket.broadcast.emit('message', message); 
     });
 
     socket.on('create or join', function (room) {
@@ -71,7 +45,7 @@ io.sockets.on('connection', function (socket) {
             socket.emit('joined', room);
         }
 
-        else { // max two clients
+        else { 
             socket.emit('full', room);
         }
 
@@ -83,8 +57,3 @@ io.sockets.on('connection', function (socket) {
 https.listen(3000, function () {
     console.log('Example app listening on port 3000! Go to https://localhost:3000/')
 })
-
-
-
-
-

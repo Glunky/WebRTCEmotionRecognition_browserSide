@@ -1,5 +1,3 @@
-//const video = document.getElementById('video')
-
 var clientType = "";
 
 var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
@@ -7,7 +5,6 @@ var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
 navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 var pc; // PeerConnection
-//  getUserMedia
 
 navigator.getUserMedia(
     { audio: true, video: true },
@@ -23,6 +20,7 @@ function gotStream(stream) {
     pc.onicecandidate = gotIceCandidate;
     pc.onaddstream = gotRemoteStream;
 }
+
 // createOffer
 function createOffer() {
     pc.createOffer(
@@ -31,6 +29,7 @@ function createOffer() {
         { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } }
     );
 }
+
 // createAnswer
 function createAnswer() {
     pc.createAnswer(
@@ -89,10 +88,11 @@ function gotRemoteStream(event){
             }, 100)
           });
     }
-  }
+}
+
 ////////////////////////////////////////////////
 // socket.io
-var socket = io.connect('', {port: 1234});
+var socket = io.connect('', {port: 3000});
 function sendMessage(message){
     socket.emit('message', message);
 }
