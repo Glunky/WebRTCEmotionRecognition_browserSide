@@ -1,14 +1,43 @@
-var app = require('express')();
+
+/*
+var express = require('express')
+var fs = require('fs')
+var https = require('https')
+var app = express()
+var path = require('path');
+
+app.get('/', function (req, res) {
+    res.send('hello world')
+})
+
+https.createServer({
+    key: fs.readFileSync(__dirname + '/server.key'),
+    cert: fs.readFileSync(__dirname + '/server.cert')
+}, app)
+    .listen(3000, function () {
+        console.log('Example app listening on port 3000! Go to https://localhost:3000/')
+    })
+
+
+ */
 var express = require('express');
-var http = require('http').createServer(app);
-var io = require('socket.io')(http);
+var fs = require('fs');
+var app = express();
+var https = require('https').createServer({
+    key: fs.readFileSync(__dirname + '/server.key'),
+    cert: fs.readFileSync(__dirname + '/server.cert')
+}, app);
+
+
+//var http = require('http').createServer(app);
+var io = require('socket.io')(https);
 
 
 app.use("/static", express.static('./static/'));
 app.use("/models", express.static('./models/'));
 
 app.get('/', function(req, res){
-  res.sendFile(__dirname + '\\index.html');
+  res.sendFile(__dirname + '/index.html');
 });
 
 io.sockets.on('connection', function (socket) {
@@ -51,6 +80,11 @@ io.sockets.on('connection', function (socket) {
     });
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
-});
+https.listen(3000, function () {
+    console.log('Example app listening on port 3000! Go to https://localhost:3000/')
+})
+
+
+
+
+

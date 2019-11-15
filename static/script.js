@@ -5,9 +5,10 @@ var clientType = "";
 var PeerConnection = window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
 var IceCandidate = window.mozRTCIceCandidate || window.RTCIceCandidate;
 var SessionDescription = window.mozRTCSessionDescription || window.RTCSessionDescription;
-navigator.mediaDevices.getUserMedia = navigator.mediaDevices.getUserMedia || navigator.mediaDevices.mozGetUserMedia || navigator.mediaDevices.webkitGetUserMedia;
+navigator.getUserMedia = navigator.getUserMedia || navigator.mozGetUserMedia || navigator.webkitGetUserMedia;
 var pc; // PeerConnection
-// Step 1. getUserMedia
+//  getUserMedia
+
 navigator.getUserMedia(
     { audio: true, video: true },
     gotStream,
@@ -22,7 +23,7 @@ function gotStream(stream) {
     pc.onicecandidate = gotIceCandidate;
     pc.onaddstream = gotRemoteStream;
 }
-// Step 2. createOffer
+// createOffer
 function createOffer() {
     pc.createOffer(
         gotLocalDescription,
@@ -30,7 +31,7 @@ function createOffer() {
         { 'mandatory': { 'OfferToReceiveAudio': true, 'OfferToReceiveVideo': true } }
     );
 }
-// Step 3. createAnswer
+// createAnswer
 function createAnswer() {
     pc.createAnswer(
         gotLocalDescription,
@@ -58,8 +59,8 @@ function gotIceCandidate(event){
 let video = document.getElementById("remoteVideo");
 function gotRemoteStream(event){
     document.getElementById("remoteVideo").srcObject = event.stream;
-    
-    
+
+
     if(clientType === "offer"){
         Promise.all([
             faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
@@ -67,7 +68,7 @@ function gotRemoteStream(event){
             faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
             faceapi.nets.faceExpressionNet.loadFromUri('/models')
         ]).then(console.log("loaded"));
-          
+
           video.addEventListener('play', () => {
             const canvas = document.getElementById("canvas");
             //const canvas = faceapi.createCanvasFromMedia(video)
@@ -76,7 +77,7 @@ function gotRemoteStream(event){
             faceapi.matchDimensions(canvas, displaySize)
             setInterval(async function() {
                 try{
-                  const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+                  const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
                   const resizedDetections = faceapi.resizeResults(detections, displaySize)
                   canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height)
                   faceapi.draw.drawDetections(canvas, resizedDetections)
@@ -90,7 +91,7 @@ function gotRemoteStream(event){
     }
   }
 ////////////////////////////////////////////////
-// Socket.io
+// socket.io
 var socket = io.connect('', {port: 1234});
 function sendMessage(message){
     socket.emit('message', message);
@@ -101,7 +102,7 @@ socket.on('message', function (message){
         pc.setRemoteDescription(new SessionDescription(message));
         createAnswer();
     }
-    
+
     else if (message.type === 'answer') {
         clientType = "offer";
         pc.setRemoteDescription(new SessionDescription(message));
